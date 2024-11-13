@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Uncertainty(EarlyTrain):
-    def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200, selection_method="LeastConfidence",
+    def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30, selection_method="LeastConfidence",
                  specific_model=None, balance=False, **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs, specific_model, **kwargs)
 
