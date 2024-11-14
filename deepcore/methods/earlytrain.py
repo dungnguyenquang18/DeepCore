@@ -100,10 +100,13 @@ class EarlyTrain(CoresetMethod):
         self.train_indx = np.arange(self.n_train)
 
         # Setup model and loss
-        self.model = nets.__dict__[self.args.model if self.specific_model is None else self.specific_model](
-            self.args.channel, self.dst_pretrain_dict["num_classes"] if self.if_dst_pretrain else self.num_classes,
-            pretrained=self.torchvision_pretrain,
-            im_size=(224, 224) if self.torchvision_pretrain else self.args.im_size).to(self.args.device)
+        if self.trainable:
+            self.model = nets.__dict__[self.args.model if self.specific_model is None else self.specific_model](
+                self.args.channel, self.dst_pretrain_dict["num_classes"] if self.if_dst_pretrain else self.num_classes,
+                pretrained=self.torchvision_pretrain,
+                im_size=(224, 224) if self.torchvision_pretrain else self.args.im_size).to(self.args.device)
+        else:
+            self.model = self.args.model
 
         if self.args.device == "cpu":
             print("Using CPU.")
