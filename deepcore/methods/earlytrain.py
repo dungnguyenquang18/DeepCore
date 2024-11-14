@@ -15,7 +15,7 @@ class EarlyTrain(CoresetMethod):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30, specific_model=None,
                  torchvision_pretrain: bool = False, dst_pretrain_dict: dict = {}, fraction_pretrain=1., dst_test=None
                  ,trainable = True,**kwargs):
-        super().__init__(dst_train, args, fraction, random_seed, trainable)
+        super().__init__(dst_train, args, fraction, random_seed)
         self.epochs = epochs
         self.n_train = len(dst_train)
         self.coreset_size = round(self.n_train * fraction)
