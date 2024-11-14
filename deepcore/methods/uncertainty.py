@@ -5,7 +5,7 @@ import numpy as np
 
 class Uncertainty(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30, selection_method="LeastConfidence",
-                 specific_model=None, balance=False, **kwargs):
+                 specific_model=None, trainable = True, balance=False, **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs, specific_model, **kwargs)
 
         selection_choices = ["LeastConfidence",
@@ -17,6 +17,7 @@ class Uncertainty(EarlyTrain):
 
         self.epochs = epochs
         self.balance = balance
+        self.trainable = trainable
 
     def before_train(self):
         pass

@@ -13,13 +13,14 @@ class EarlyTrain(CoresetMethod):
     '''
 
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30, specific_model=None,
-                 torchvision_pretrain: bool = False, dst_pretrain_dict: dict = {}, fraction_pretrain=1., dst_test=None,
-                 **kwargs):
-        super().__init__(dst_train, args, fraction, random_seed)
+                 torchvision_pretrain: bool = False, dst_pretrain_dict: dict = {}, fraction_pretrain=1., dst_test=None
+                 ,trainable = True,**kwargs):
+        super().__init__(dst_train, args, fraction, random_seed, trainable)
         self.epochs = epochs
         self.n_train = len(dst_train)
         self.coreset_size = round(self.n_train * fraction)
         self.specific_model = specific_model
+        self.trainable = trainable
 
         if fraction_pretrain <= 0. or fraction_pretrain > 1.:
             raise ValueError("Illegal pretrain fraction value.")
@@ -132,7 +133,8 @@ class EarlyTrain(CoresetMethod):
                                                                        nesterov=self.args.selection_nesterov)
 
         self.before_run()
-
+        if not self.trainable: 
+            return self.finish_run()
         for epoch in range(self.epochs):
             list_of_train_idx = np.random.choice(np.arange(self.n_pretrain if self.if_dst_pretrain else self.n_train),
                                                  self.n_pretrain_size, replace=False)
@@ -143,7 +145,7 @@ class EarlyTrain(CoresetMethod):
                 self.test(epoch)
             self.after_epoch()
 
-        return self.finish_run()
+        return self.model,self.finish_run()
 
     def test(self, epoch):
         self.model.no_grad = True
