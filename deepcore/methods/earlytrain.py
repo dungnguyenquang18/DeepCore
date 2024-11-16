@@ -137,7 +137,7 @@ class EarlyTrain(CoresetMethod):
 
         self.before_run()
         if not self.trainable: 
-            return self.finish_run()
+            return self.model , self.finish_run()
         for epoch in range(self.epochs):
             list_of_train_idx = np.random.choice(np.arange(self.n_pretrain if self.if_dst_pretrain else self.n_train),
                                                  self.n_pretrain_size, replace=False)
