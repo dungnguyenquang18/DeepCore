@@ -165,8 +165,12 @@ def ResNet(arch: str, channel: int, num_classes: int, im_size, record_embedding:
                                  record_embedding=record_embedding, no_grad=no_grad)
         else:
             raise ValueError("Model architecture not found.")
+        model_urls = {
+            'resnet18': 'https://download.pytorch.org/models/resnet18-f37072fd.pth',
+            # Add other ResNet URLs as needed
+        }
         from torch.hub import load_state_dict_from_url
-        state_dict = load_state_dict_from_url(resnet.model_urls[arch], progress=True)
+        state_dict = load_state_dict_from_url(model_urls['resnet18'], progress=True)
         net.load_state_dict(state_dict)
 
         if channel != 3:
