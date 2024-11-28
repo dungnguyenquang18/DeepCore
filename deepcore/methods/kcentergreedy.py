@@ -29,14 +29,14 @@ def k_center_greedy(matrix, budget: int, metric, device, random_seed=None, index
     assert callable(metric)
 
     already_selected = np.array(already_selected)
-
+    first = already_selected[0]
     with torch.no_grad():
         np.random.seed(random_seed)
         if already_selected.__len__() == 0:
             select_result = np.zeros(sample_num, dtype=bool)
             # Randomly select one initial point.
             already_selected = [np.random.randint(0, sample_num)]
-            budget -= 1
+            # budget -= 1
             select_result[already_selected] = True
         else:
             select_result = np.in1d(index, already_selected)
@@ -62,6 +62,7 @@ def k_center_greedy(matrix, budget: int, metric, device, random_seed=None, index
             mins[p] = -1
             dis_matrix[num_of_already_selected + i, ~select_result] = metric(matrix[[p]], matrix[~select_result])
             mins = torch.min(mins, dis_matrix[num_of_already_selected + i])
+        select_result[first] = False
     return index[select_result]
 
 
