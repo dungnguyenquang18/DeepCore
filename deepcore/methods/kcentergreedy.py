@@ -29,7 +29,7 @@ def k_center_greedy(matrix, budget: int, metric, device, random_seed=None, index
     assert callable(metric)
 
     already_selected = np.array(already_selected)
-    first = already_selected[0]
+    
     with torch.no_grad():
         np.random.seed(random_seed)
         if already_selected.__len__() == 0:
@@ -40,7 +40,7 @@ def k_center_greedy(matrix, budget: int, metric, device, random_seed=None, index
             select_result[already_selected] = True
         else:
             select_result = np.in1d(index, already_selected)
-
+        first = already_selected[0]
         num_of_already_selected = np.sum(select_result)
 
         # Initialize a (num_of_already_selected+budget-1)*sample_num matrix storing distances of pool points from
