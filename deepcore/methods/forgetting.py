@@ -74,8 +74,8 @@ class Forgetting(EarlyTrain):
         else:
             top_examples = np.array([], dtype=np.int64)
             for c in range(self.num_classes):
-                # c_indx = self.train_indx[self.dst_train.targets == c]
-                c_indx = self.train_indx[torch.argmax(self.dst_train.y, dim=1) == c]
+                c_indx = self.train_indx[self.dst_train.y == c]
+                # c_indx = self.train_indx[torch.argmax(self.dst_train.y, dim=1) == c]
                 budget = round(self.fraction * len(c_indx))
                 top_examples = np.append(top_examples,
                                     c_indx[np.argsort(self.forgetting_events[c_indx].cpu().numpy())[::-1][:budget]])
