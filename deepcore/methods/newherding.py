@@ -98,8 +98,8 @@ class NewHerding(EarlyTrain):
                 for j in range(matrix.shape[0]):
                     if select_result[j]:
                         continue
-                        # No need to move to CPU
-                    possible_select_result = torch.cat((matrix[select_result], matrix[j])) # Use torch.cat instead of np.append
+                    # No need to move to CPU
+                    possible_select_result = torch.cat((matrix[select_result], matrix[j].unsqueeze(0)))  # Unsqueeze to make it 2D
                     cen_dist = euclid_dist(mu, self.__self_attention(possible_select_result))
                     if min_dist > cen_dist:
                         min_dist = cen_dist
