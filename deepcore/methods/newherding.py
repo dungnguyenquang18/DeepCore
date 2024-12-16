@@ -61,10 +61,10 @@ class NewHerding(EarlyTrain):
 
     def before_run(self):
         self.emb_dim = self.model.get_last_layer().in_features
-    def __self_attention(self, matrix, num_head = 1):
+    def __self_attention(self, matrix, num_head=1):
         q, k, v = torch.tensor(matrix), torch.tensor(matrix), torch.tensor(matrix)  # Added value tensor
-        out = torch.matmul(q, k.permute(-1,0)) 
-        out = torch.layer_norm(out)
+        out = torch.matmul(q, k.permute(-1, 0)) 
+        out = torch.layer_norm(out, normalized_shape=out.shape[-1:])  # Add normalized_shape argument
         return torch.mean(out, dim=0)
         
 
