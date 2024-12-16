@@ -5,7 +5,7 @@ from .methods_utils import euclidean_dist, cossim
 from ..nets.nets_utils import MyDataParallel
 
 
-class Herding(EarlyTrain):
+class NewHerding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30,
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
