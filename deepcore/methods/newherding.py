@@ -93,14 +93,21 @@ class NewHerding(EarlyTrain):
                 if i % self.args.print_freq == 0:
                     print("| Selecting [%3d/%3d]" % (i + 1, budget))
                 dist = []  # Initialize as a list to avoid zero-dimensional tensor issue
-                for img in matrix[~select_result]:  # No need to move to CPU
-                    possible_select_result = torch.cat((matrix[select_result], img.unsqueeze(0)))  # Use torch.cat instead of np.append
-                    dist.append(euclid_dist(mu, self.__self_attention(possible_select_result)))  # Store distances in a list
-                
-                dist = torch.tensor(dist)  # Convert list to tensor after the loop
-                min_index = torch.argmin(dist).item()
-                p = torch.where(~select_result)[0][min_index]
-                select_result[p] = True
+                min_indx = -1
+                min_dist = 100000000000000
+                for i in range(matrix.shape(0)):
+                    if select_result[i]:
+                        continue
+                        # No need to move to CPU
+                    possible_select_result = torch.cat((matrix[select_result], matrix[0])) # Use torch.cat instead of np.append
+                    cen_dist = euclid_dist(mu, self.__self_attention(possible_select_result))
+                    if min_dist > cen_dist:
+                        min_dist = cen_dist
+                        min_indx = i
+                    # dist.append(euclid_dist(mu, self.__self_attention(possible_select_result)))  # Store distances in a list
+                    
+            
+                select_result[min_indx] = True
         if index is None:
             index = indices
         return index[select_result]
