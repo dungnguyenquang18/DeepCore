@@ -95,15 +95,15 @@ class NewHerding(EarlyTrain):
                 dist = []  # Initialize as a list to avoid zero-dimensional tensor issue
                 min_indx = -1
                 min_dist = 100000000000000
-                for i in range(matrix.shape(0)):
-                    if select_result[i]:
+                for j in range(matrix.shape[0]):
+                    if select_result[j]:
                         continue
                         # No need to move to CPU
-                    possible_select_result = torch.cat((matrix[select_result], matrix[0])) # Use torch.cat instead of np.append
+                    possible_select_result = torch.cat((matrix[select_result], matrix[j])) # Use torch.cat instead of np.append
                     cen_dist = euclid_dist(mu, self.__self_attention(possible_select_result))
                     if min_dist > cen_dist:
                         min_dist = cen_dist
-                        min_indx = i
+                        min_indx = j
                     # dist.append(euclid_dist(mu, self.__self_attention(possible_select_result)))  # Store distances in a list
                     
             
