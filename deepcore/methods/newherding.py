@@ -97,7 +97,7 @@ class NewHerding(EarlyTrain):
                     possible_select_result = torch.cat((matrix[select_result], img.unsqueeze(0)))  # Use torch.cat instead of np.append
                     dist.append(euclid_dist(mu, self.__self_attention(possible_select_result)))  # Store distances in a list
                 
-                dist = torch.cat(dist)  # Convert list to tensor after the loop
+                dist = torch.tensor(dist)  # Convert list to tensor after the loop
                 min_index = torch.argmin(dist).item()
                 p = torch.where(~select_result)[0][min_index]
                 select_result[p] = True
