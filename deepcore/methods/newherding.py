@@ -5,6 +5,13 @@ from .methods_utils import euclidean_dist, cossim
 from ..nets.nets_utils import MyDataParallel
 
 
+def euclid_dist(x, y):
+    # Calculate the squared differences
+    z = torch.sum((x - y) ** 2, dim=-1)
+    # Take the square root to get the Euclidean distance
+    z = torch.sqrt(z)
+    return z
+
 class NewHerding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30,
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", **kwargs):
@@ -66,7 +73,8 @@ class NewHerding(EarlyTrain):
         out = torch.matmul(q, k.permute(-1, 0)) 
         out = torch.layer_norm(out, normalized_shape=out.shape[-1:])  # Add normalized_shape argument
         return torch.mean(out, dim=0)
-        
+    
+    
 
     def herding(self, matrix, budget: int, index=None):
         sample_num = matrix.shape[0]
@@ -87,7 +95,7 @@ class NewHerding(EarlyTrain):
                 dist = torch.empty(0, device=matrix.device)  # Initialize distance tensor on the same device
                 for img in matrix[~select_result]:  # No need to move to CPU
                     possible_select_result = torch.cat((matrix[select_result], img.unsqueeze(0)))  # Use torch.cat instead of np.append
-                    dist = torch.cat((dist, self.metric(mu, self.__self_attention(possible_select_result))))  # Ensure all are on GPU
+                    dist = torch.cat((dist, euclid_dist(mu, self.__self_attention(possible_select_result))))  # Ensure all are on GPU
                 
                 min_index = torch.argmin(dist).item()
                 p = torch.where(~select_result)[0][min_index]
