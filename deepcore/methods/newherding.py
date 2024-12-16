@@ -10,6 +10,8 @@ class NewHerding(EarlyTrain):
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
 
+        self.model = None
+
         if metric == "cosine_simliarity":
             self.metric = cossim
         elif callable(metric):
