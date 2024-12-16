@@ -69,7 +69,6 @@ class NewHerding(EarlyTrain):
         
 
     def herding(self, matrix, budget: int, index=None):
-
         sample_num = matrix.shape[0]
 
         if budget < 0:
@@ -77,21 +76,21 @@ class NewHerding(EarlyTrain):
         elif budget > sample_num:
             budget = sample_num
 
-        indices = np.arange(sample_num)
+        indices = torch.arange(sample_num).to(matrix.device)  # Ensure indices are on the same device as matrix
         with torch.no_grad():
             mu = self.__self_attention(matrix)
-            select_result = np.zeros(sample_num, dtype=bool)
+            select_result = torch.zeros(sample_num, dtype=torch.bool, device=matrix.device)  # Use the same device
 
             for i in range(budget):
                 if i % self.args.print_freq == 0:
                     print("| Selecting [%3d/%3d]" % (i + 1, budget))
-                dist = np.array([])
-                for img in matrix[~select_result]:  
-                    possible_select_result = np.append(matrix[select_result], img)
-                    dist = np.append(dist, self.metric(mu, self.__self_attention(possible_select_result)))
+                dist = torch.empty(0, device=matrix.device)  # Initialize distance tensor on the same device
+                for img in matrix[~select_result]:  # No need to move to CPU
+                    possible_select_result = torch.cat((matrix[select_result], img.unsqueeze(0)))  # Use torch.cat instead of np.append
+                    dist = torch.cat((dist, self.metric(mu, self.__self_attention(possible_select_result))))  # Ensure all are on GPU
                 
                 min_index = torch.argmin(dist).item()
-                p = np.where(~select_result)[0][min_index]
+                p = torch.where(~select_result)[0][min_index]
                 select_result[p] = True
         if index is None:
             index = indices
