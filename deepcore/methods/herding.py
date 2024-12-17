@@ -103,5 +103,5 @@ class Herding(EarlyTrain):
 
     def select(self, **kwargs):
         selection_result = self.run()
-        return selection_result
+        return self.model, selection_result
 
