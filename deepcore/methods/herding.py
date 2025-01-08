@@ -100,7 +100,7 @@ class Herding(EarlyTrain):
         #                 budget=round(self.fraction * len(class_index)), index=class_index))
         # else:
         #     selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
-        return self.convexhull(self.construct_matrix()[:1000])
+        return self.construct_matrix()
 
     def select(self, **kwargs):
         selection_result = self.run()
