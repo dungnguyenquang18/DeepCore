@@ -91,20 +91,20 @@ class Herding(EarlyTrain):
         if isinstance(self.model, MyDataParallel):
             self.model = self.model.module
 
-        # if self.balance:
-        #     selection_result = np.array([], dtype=np.int32)
-        #     for c in range(self.args.num_classes):
-        #         class_index = np.arange(self.n_train)[self.dst_train.targets == c]
+        if self.balance:
+            selection_result = np.array([], dtype=np.int32)
+            for c in range(self.args.num_classes):
+                class_index = np.arange(self.n_train)[self.dst_train.targets == c]
 
-        #         selection_result = np.append(selection_result, self.herding(self.construct_matrix(class_index),
-        #                 budget=round(self.fraction * len(class_index)), index=class_index))
-        # else:
-        #     selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
-        return self.construct_matrix()
+                selection_result = np.append(selection_result, self.herding(self.construct_matrix(class_index),
+                        budget=round(self.fraction * len(class_index)), index=class_index))
+        else:
+            selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
+        return selection_result
 
     def select(self, **kwargs):
-        selection_result = self.run()
-        return  selection_result
+        model, selection_result = self.run()
+        return  model, selection_result
 
     def convexhull(self, matrix):
         """Tính toán bao lồi cho ma trận đầu vào."""
