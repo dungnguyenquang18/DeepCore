@@ -148,7 +148,7 @@ class EarlyTrain(CoresetMethod):
                 self.test(epoch)
             self.after_epoch()
 
-        return self.model,self.finish_run()
+        return self.finish_run()
 
     def test(self, epoch):
         self.model.no_grad = True

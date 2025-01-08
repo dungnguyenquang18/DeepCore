@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from .methods_utils import euclidean_dist
 from ..nets.nets_utils import MyDataParallel
+from scipy.spatial import ConvexHull
 
 
 class Herding(EarlyTrain):
@@ -90,18 +91,28 @@ class Herding(EarlyTrain):
         if isinstance(self.model, MyDataParallel):
             self.model = self.model.module
 
-        if self.balance:
-            selection_result = np.array([], dtype=np.int32)
-            for c in range(self.args.num_classes):
-                class_index = np.arange(self.n_train)[self.dst_train.targets == c]
+        # if self.balance:
+        #     selection_result = np.array([], dtype=np.int32)
+        #     for c in range(self.args.num_classes):
+        #         class_index = np.arange(self.n_train)[self.dst_train.targets == c]
 
-                selection_result = np.append(selection_result, self.herding(self.construct_matrix(class_index),
-                        budget=round(self.fraction * len(class_index)), index=class_index))
-        else:
-            selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
-        return {"indices": selection_result}
+        #         selection_result = np.append(selection_result, self.herding(self.construct_matrix(class_index),
+        #                 budget=round(self.fraction * len(class_index)), index=class_index))
+        # else:
+        #     selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
+        return self.convexhull(self.construct_matrix())
 
     def select(self, **kwargs):
         selection_result = self.run()
-        return self.model, selection_result
+        return  selection_result
 
+    def convexhull(self, matrix):
+        """Tính toán bao lồi cho ma trận đầu vào."""
+        hull = ConvexHull(matrix.cpu().numpy())  # Chuyển ma trận về numpy nếu cần
+        return hull.vertices  # Trả về các chỉ số của các đỉnh của bao lồi
+    def test_covexhull(self):
+        if isinstance(self.model, MyDataParallel):
+            self.model = self.model.module
+        selection_result = self.convexhull(self.construct_matrix())
+        return selection_result
+        
