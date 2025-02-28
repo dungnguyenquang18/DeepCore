@@ -79,7 +79,7 @@ class Herding(EarlyTrain):
                     print("| Selecting [%3d/%3d]" % (i + 1, budget))
                 dist = self.metric(((i + 1) * mu - torch.sum(matrix[select_result], dim=0)).view(1, -1),
                                    matrix[~select_result])
-                p = torch.argmax(dist).item()
+                p = torch.argmin(dist).item()
                 p = indices[~select_result][p]
                 select_result[p] = True
         if index is None:
