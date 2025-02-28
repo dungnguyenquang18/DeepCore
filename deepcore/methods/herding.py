@@ -3,11 +3,10 @@ import torch
 import numpy as np
 from .methods_utils import euclidean_dist
 from ..nets.nets_utils import MyDataParallel
-from scipy.spatial import ConvexHull
 
 
 class Herding(EarlyTrain):
-    def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=30,
+    def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
 
@@ -80,7 +79,7 @@ class Herding(EarlyTrain):
                     print("| Selecting [%3d/%3d]" % (i + 1, budget))
                 dist = self.metric(((i + 1) * mu - torch.sum(matrix[select_result], dim=0)).view(1, -1),
                                    matrix[~select_result])
-                p = torch.argmin(dist).item()
+                p = torch.argmax(dist).item()
                 p = indices[~select_result][p]
                 select_result[p] = True
         if index is None:
@@ -100,19 +99,8 @@ class Herding(EarlyTrain):
                         budget=round(self.fraction * len(class_index)), index=class_index))
         else:
             selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
-        return selection_result
+        return {"indices": selection_result}
 
     def select(self, **kwargs):
-        model, selection_result = self.run()
-        return  model, selection_result
-
-    def convexhull(self, matrix):
-        """Tính toán bao lồi cho ma trận đầu vào."""
-        hull = ConvexHull(matrix.cpu().numpy())  # Chuyển ma trận về numpy nếu cần
-        return hull.vertices  # Trả về các chỉ số của các đỉnh của bao lồi
-    def test_covexhull(self):
-        if isinstance(self.model, MyDataParallel):
-            self.model = self.model.module
-        selection_result = self.convexhull(self.construct_matrix())
+        selection_result = self.run()
         return selection_result
-        
