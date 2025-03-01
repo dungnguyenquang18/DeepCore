@@ -3,13 +3,17 @@ import torch
 import numpy as np
 from .methods_utils import euclidean_dist
 from ..nets.nets_utils import MyDataParallel
+from sklearn.ensemble import IsolationForest
 
 
 class Herding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
-                 specific_model="ResNet18", balance: bool = False, metric="euclidean", **kwargs):
+                 specific_model="ResNet18", balance: bool = False, metric="euclidean", 
+                 use_weights=False, **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
 
+        self.use_weights = use_weights
+        
         if metric == "euclidean":
             self.metric = euclidean_dist
         elif callable(metric):
@@ -60,8 +64,34 @@ class Herding(EarlyTrain):
     def before_run(self):
         self.emb_dim = self.model.get_last_layer().in_features
 
-    def herding(self, matrix, budget: int, index=None):
+    def compute_weights(self, index=None):
+        """Tính trọng số w(x) dựa trên Isolation Forest"""
+        # Lấy dữ liệu để tính trọng số
+        if index is None:
+            data_loader = torch.utils.data.DataLoader(
+                self.dst_train, batch_size=self.n_train, num_workers=self.args.workers)
+        else:
+            data_loader = torch.utils.data.DataLoader(
+                torch.utils.data.Subset(self.dst_train, index),
+                batch_size=len(index), num_workers=self.args.workers)
+        
+        inputs, _ = next(iter(data_loader))
+        inputs_np = inputs.flatten(1).cpu().numpy()
+        
+        # Huấn luyện Isolation Forest
+        iso_forest = IsolationForest(random_state=self.random_seed, n_jobs=-1)
+        iso_forest.fit(inputs_np)
+        
+        # Tính điểm bất thường và chuyển thành trọng số
+        # AnomalyScore(x) ∈ [0, 1], w(x) = 1 - AnomalyScore(x)
+        anomaly_scores = iso_forest.score_samples(inputs_np)
+        # Chuẩn hóa về [0, 1]
+        anomaly_scores = (anomaly_scores - anomaly_scores.min()) / (anomaly_scores.max() - anomaly_scores.min())
+        weights = 1 - anomaly_scores
+        
+        return 1 / torch.from_numpy(weights).float().to(self.args.device)
 
+    def herding(self, matrix, budget: int, index=None):
         sample_num = matrix.shape[0]
 
         if budget < 0:
@@ -71,17 +101,45 @@ class Herding(EarlyTrain):
 
         indices = np.arange(sample_num)
         with torch.no_grad():
-            mu = torch.mean(matrix, dim=0)
+            # Tính trọng số nếu cần
+            if self.use_weights:
+                weights = self.compute_weights(index)
+                # Áp dụng trọng số vào ma trận
+                weighted_matrix = matrix * weights.unsqueeze(1)
+                mu = torch.sum(weighted_matrix, dim=0) / torch.sum(weights)
+            else:
+                mu = torch.mean(matrix, dim=0)
+                
             select_result = np.zeros(sample_num, dtype=bool)
 
             for i in range(budget):
                 if i % self.args.print_freq == 0:
                     print("| Selecting [%3d/%3d]" % (i + 1, budget))
-                dist = self.metric(((i + 1) * mu - torch.sum(matrix[select_result], dim=0)).view(1, -1),
-                                   matrix[~select_result])
+                
+                if self.use_weights:
+                    # Tính tổng có trọng số của các điểm đã chọn
+                    if np.any(select_result):
+                        selected_sum = torch.sum(matrix[select_result] * 
+                                               weights[select_result].unsqueeze(1), dim=0)
+                        selected_weight_sum = torch.sum(weights[select_result])
+                    else:
+                        selected_sum = torch.zeros_like(mu)
+                        selected_weight_sum = 0
+                    
+                    # Tính khoảng cách có trọng số
+                    target = ((i + 1) * mu - selected_sum).view(1, -1)
+                    
+                    # Áp dụng trọng số cho các điểm chưa chọn
+                    unselected_weights = weights[~select_result]
+                    dist = self.metric(target, matrix[~select_result]) / unselected_weights.unsqueeze(0)
+                else:
+                    dist = self.metric(((i + 1) * mu - torch.sum(matrix[select_result], dim=0)).view(1, -1),
+                                      matrix[~select_result])
+                
                 p = torch.argmin(dist).item()
                 p = indices[~select_result][p]
                 select_result[p] = True
+                
         if index is None:
             index = indices
         return index[select_result]
