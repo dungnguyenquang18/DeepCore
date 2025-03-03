@@ -4,15 +4,17 @@ import numpy as np
 from .methods_utils import euclidean_dist
 from ..nets.nets_utils import MyDataParallel
 from sklearn.ensemble import IsolationForest
+from scipy.spatial import ConvexHull
 
 
 class Herding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", 
-                 use_weights=False, **kwargs):
+                 use_weights=False, use_convex_hull=False, **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
 
         self.use_weights = use_weights
+        self.use_convex_hull = use_convex_hull
         
         if metric == "euclidean":
             self.metric = euclidean_dist
@@ -112,15 +114,14 @@ class Herding(EarlyTrain):
                 
             select_result = np.zeros(sample_num, dtype=bool)
 
-            for i in range(budget):
-                if i % self.args.print_freq == 0:
-                    print("| Selecting [%3d/%3d]" % (i + 1, budget))
-                
-                if self.use_weights:
+            if self.use_weights:
+                for i in range(budget):
+                    if i % self.args.print_freq == 0:
+                        print("| Selecting [%3d/%3d]" % (i + 1, budget))
                     # Tính tổng có trọng số của các điểm đã chọn
                     if np.any(select_result):
                         selected_sum = torch.sum(matrix[select_result] * 
-                                               weights[select_result].unsqueeze(1), dim=0)
+                                            weights[select_result].unsqueeze(1), dim=0)
                         selected_weight_sum = torch.sum(weights[select_result])
                     else:
                         selected_sum = torch.zeros_like(mu)
@@ -132,13 +133,24 @@ class Herding(EarlyTrain):
                     # Áp dụng trọng số cho các điểm chưa chọn
                     unselected_weights = weights[~select_result]
                     dist = self.metric(target, matrix[~select_result]) / unselected_weights.unsqueeze(0)
-                else:
+                    p = torch.argmin(dist).item()
+                    p = indices[~select_result][p]
+                    select_result[p] = True
+                    
+            else:
+                for i in range(budget):
+                    if i % self.args.print_freq == 0:
+                        print("| Selecting [%3d/%3d]" % (i + 1, budget))
+                        
                     dist = self.metric(((i + 1) * mu - torch.sum(matrix[select_result], dim=0)).view(1, -1),
                                       matrix[~select_result])
+
+                    p = torch.argmin(dist).item()
+                    p = indices[~select_result][p]
+                    select_result[p] = True
+                        
                 
-                p = torch.argmin(dist).item()
-                p = indices[~select_result][p]
-                select_result[p] = True
+                
                 
         if index is None:
             index = indices
@@ -156,7 +168,19 @@ class Herding(EarlyTrain):
                 selection_result = np.append(selection_result, self.herding(self.construct_matrix(class_index),
                         budget=round(self.fraction * len(class_index)), index=class_index))
         else:
-            selection_result = self.herding(self.construct_matrix(), budget=self.coreset_size)
+            print('not balance')
+            matrix = self.construct_matrix()
+                # Tính toán convex hull cho ma trận nếu use_convex_hull là True
+            if self.use_convex_hull and len(matrix) >= 3:  # Convex hull cần ít nhất 3 điểm
+                print("calculating convex hull")
+                hull = ConvexHull(matrix.detach().to('cpu').numpy())  # Chuyển sang CPU để tính convex hull
+                # Lấy các chỉ số của các điểm trong convex hull
+                hull_indices = hull.vertices
+                matrix = matrix[hull_indices]  # Giảm ma trận xuống chỉ còn các điểm trong convex hull
+                print("done convex hull")
+            else:
+                print('not use convex hull')
+            selection_result = self.herding(matrix, budget=self.coreset_size)
         return {"indices": selection_result}
 
     def select(self, **kwargs):
