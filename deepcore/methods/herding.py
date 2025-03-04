@@ -1,7 +1,7 @@
 from .earlytrain import EarlyTrain
 import torch
 import numpy as np
-from .methods_utils import euclidean_dist
+from .methods_utils import euclidean_dist, cossim
 from ..nets.nets_utils import MyDataParallel
 from sklearn.ensemble import IsolationForest
 from scipy.spatial import ConvexHull
@@ -18,6 +18,8 @@ class Herding(EarlyTrain):
         
         if metric == "euclidean":
             self.metric = euclidean_dist
+        elif metric =='cossim':
+            self.metric = cossim
         elif callable(metric):
             self.metric = metric
         else:
