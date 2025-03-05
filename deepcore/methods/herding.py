@@ -10,10 +10,10 @@ from scipy.spatial import ConvexHull
 class Herding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", 
-                 use_weights=False, use_convex_hull=False, **kwargs):
+                 use_anomaly=False, use_convex_hull=False, **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
 
-        self.use_weights = use_weights
+        self.use_anomaly = use_anomaly
         self.use_convex_hull = use_convex_hull
         
         if metric == "euclidean":
@@ -91,9 +91,9 @@ class Herding(EarlyTrain):
         anomaly_scores = iso_forest.score_samples(inputs_np)
         # Chuẩn hóa về [0, 1]
         anomaly_scores = (anomaly_scores - anomaly_scores.min()) / (anomaly_scores.max() - anomaly_scores.min())
-        weights = 1 - anomaly_scores
+
         
-        return 1 / torch.from_numpy(weights).float().to(self.args.device)
+        return anomaly_scores
 
     def herding(self, matrix, budget: int, index=None):
         sample_num = matrix.shape[0]
@@ -106,7 +106,7 @@ class Herding(EarlyTrain):
         indices = np.arange(sample_num)
         with torch.no_grad():
             # Tính trọng số nếu cần
-            if self.use_weights:
+            if self.use_anomaly:
                 weights = self.compute_weights(index)
                 # Áp dụng trọng số vào ma trận
                 weighted_matrix = matrix * weights.unsqueeze(1)
@@ -116,7 +116,7 @@ class Herding(EarlyTrain):
                 
             select_result = np.zeros(sample_num, dtype=bool)
 
-            if self.use_weights:
+            if self.use_anomaly:
                 for i in range(budget):
                     if i % self.args.print_freq == 0:
                         print("| Selecting [%3d/%3d]" % (i + 1, budget))
