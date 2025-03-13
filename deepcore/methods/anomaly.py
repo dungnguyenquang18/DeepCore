@@ -141,16 +141,7 @@ class Anomaly(EarlyTrain):
         else:
             print('not balance')
             matrix = self.construct_matrix()
-                # Tính toán convex hull cho ma trận nếu use_convex_hull là True
-            if self.use_convex_hull and len(matrix) >= 3:  # Convex hull cần ít nhất 3 điểm
-                print("calculating convex hull")
-                hull = ConvexHull(matrix.detach().to('cpu').numpy())  # Chuyển sang CPU để tính convex hull
-                # Lấy các chỉ số của các điểm trong convex hull
-                hull_indices = hull.vertices
-                matrix = matrix[hull_indices]  # Giảm ma trận xuống chỉ còn các điểm trong convex hull
-                print("done convex hull")
-            else:
-                print('not use convex hull')
+            print('not use convex hull')
             selection_result = self.anomaly(matrix, budget=self.coreset_size)
         return {"indices": selection_result}
 
