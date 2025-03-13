@@ -108,17 +108,17 @@ class Anomaly(EarlyTrain):
                 
             select_result = np.zeros(sample_num, dtype=bool)
 
-            if self.use_anomaly:
-                for i in range(budget):
-                    if i % self.args.print_freq == 0:
-                        print("| Selecting [%3d/%3d]" % (i + 1, budget))
-                    
-                    # Áp dụng trọng số cho các điểm chưa chọn
-                    unselected_weights = weights[~select_result]
-                    dist = unselected_weights.unsqueeze(0)
-                    p = torch.argmin(dist).item()
-                    p = indices[~select_result][p]
-                    select_result[p] = True
+
+            for i in range(budget):
+                if i % self.args.print_freq == 0:
+                    print("| Selecting [%3d/%3d]" % (i + 1, budget))
+
+                # Áp dụng trọng số cho các điểm chưa chọn
+                unselected_weights = weights[~select_result]
+                dist = unselected_weights.unsqueeze(0)
+                p = torch.argmin(dist).item()
+                p = indices[~select_result][p]
+                select_result[p] = True
            
                 
                 
