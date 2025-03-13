@@ -115,6 +115,7 @@ class Anomaly(EarlyTrain):
 
                 # Áp dụng trọng số cho các điểm chưa chọn
                 unselected_weights = weights[~select_result]
+                unselected_weights = torch.tensor(unselected_weights, device=self.args.device)  
                 dist = unselected_weights.unsqueeze(0)
                 p = torch.argmin(dist).item()
                 p = indices[~select_result][p]
