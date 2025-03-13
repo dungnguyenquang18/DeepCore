@@ -14,5 +14,4 @@ from .kcentergreedy import *
 from .submodular import *
 from .uncertainty import *
 from .uniform import *
-
-
+from .anomaly import *
