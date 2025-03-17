@@ -4,4 +4,4 @@ requests
 scipy
 torch
 torchvision
-sklearn
+scikit-learn

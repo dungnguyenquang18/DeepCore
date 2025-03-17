@@ -4,17 +4,17 @@ import numpy as np
 from .methods_utils import euclidean_dist, cossim
 from ..nets.nets_utils import MyDataParallel
 from sklearn.ensemble import IsolationForest
-from scipy.spatial import ConvexHull
+
 
 
 class Herding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
                  specific_model="ResNet18", balance: bool = False, metric="euclidean", 
-                 use_anomaly=False, use_convex_hull=False, **kwargs):
-        super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
+                 use_anomaly=False, trainable=True, **kwargs):
+        super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model,trainable=trainable, **kwargs)
 
         self.use_anomaly = use_anomaly
-        self.use_convex_hull = use_convex_hull
+        self.trainable = trainable
         
         if metric == "euclidean":
             self.metric = euclidean_dist
@@ -85,9 +85,7 @@ class Herding(EarlyTrain):
         # Huấn luyện Isolation Forest
         iso_forest = IsolationForest(random_state=self.random_seed, n_jobs=-1)
         iso_forest.fit(inputs_np)
-        
-        # Tính điểm bất thường và chuyển thành trọng số
-        # AnomalyScore(x) ∈ [0, 1], w(x) = 1 - AnomalyScore(x)
+ 
         anomaly_scores = iso_forest.score_samples(inputs_np)
         # Chuẩn hóa về [0, 1]
         anomaly_scores = (anomaly_scores - anomaly_scores.min()) / (anomaly_scores.max() - anomaly_scores.min())
@@ -172,16 +170,8 @@ class Herding(EarlyTrain):
         else:
             print('not balance')
             matrix = self.construct_matrix()
-                # Tính toán convex hull cho ma trận nếu use_convex_hull là True
-            if self.use_convex_hull and len(matrix) >= 3:  # Convex hull cần ít nhất 3 điểm
-                print("calculating convex hull")
-                hull = ConvexHull(matrix.detach().to('cpu').numpy())  # Chuyển sang CPU để tính convex hull
-                # Lấy các chỉ số của các điểm trong convex hull
-                hull_indices = hull.vertices
-                matrix = matrix[hull_indices]  # Giảm ma trận xuống chỉ còn các điểm trong convex hull
-                print("done convex hull")
-            else:
-                print('not use convex hull')
+  
+
             selection_result = self.herding(matrix, budget=self.coreset_size)
         return {"indices": selection_result}
 
