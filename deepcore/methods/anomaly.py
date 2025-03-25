@@ -9,8 +9,9 @@ from scipy.spatial import ConvexHull
 
 class Anomaly(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
-                 specific_model="ResNet18", balance: bool = False, metric="euclidean", **kwargs):
-        super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model, **kwargs)
+                 specific_model="ResNet18", balance: bool = False, metric="euclidean", 
+                 trainable=True, **kwargs):
+        super().__init__(dst_train, args, fraction, random_seed, epochs=epochs, specific_model=specific_model,trainable=trainable, **kwargs)
 
 
         if metric == "euclidean":
