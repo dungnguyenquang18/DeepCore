@@ -91,7 +91,7 @@ class Herding(EarlyTrain):
         anomaly_scores = (anomaly_scores - anomaly_scores.min()) / (anomaly_scores.max() - anomaly_scores.min())
 
         
-        return anomaly_scores
+        return torch.from_numpy(anomaly_scores).float().to(self.args.device)
 
     def herding(self, matrix, budget: int, index=None):
         sample_num = matrix.shape[0]
@@ -106,7 +106,7 @@ class Herding(EarlyTrain):
             # Tính trọng số nếu cần
             if self.use_anomaly:
                 weights = self.compute_weights(index)
-                weights = torch.tensor(weights, device=self.args.device)  # Convert to PyTorch tensor
+                # weights = torch.tensor(weights, device=self.args.device)  # Convert to PyTorch tensor
                 # Áp dụng trọng số vào ma trận
                 weighted_matrix = matrix * weights.unsqueeze(1)
                 mu = torch.sum(weighted_matrix, dim=0) / torch.sum(weights)
