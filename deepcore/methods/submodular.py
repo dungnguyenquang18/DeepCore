@@ -7,8 +7,8 @@ from ..nets.nets_utils import MyDataParallel
 
 class Submodular(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200, specific_model=None, balance=False,
-                 function="LogDeterminant", greedy="ApproximateLazyGreedy", metric="cossim", **kwargs):
-        super(Submodular, self).__init__(dst_train, args, fraction, random_seed, epochs, specific_model,trainable=True, **kwargs)
+                 function="LogDeterminant", greedy="ApproximateLazyGreedy", metric="cossim",trainable=True, **kwargs):
+        super(Submodular, self).__init__(dst_train, args, fraction, random_seed, epochs, specific_model,trainable=False, **kwargs)
 
         if greedy not in submodular_optimizer.optimizer_choices:
             raise ModuleNotFoundError("Greedy optimizer not found.")
