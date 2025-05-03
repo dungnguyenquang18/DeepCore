@@ -4,7 +4,8 @@ import numpy as np
 from .methods_utils import euclidean_dist, cossim
 from ..nets.nets_utils import MyDataParallel
 from sklearn.ensemble import IsolationForest
-from scipy.spatial import ConvexHull
+from transformers import AutoModel, AutoProcessor
+from torchvision import transforms
 
 
 class Anomaly(EarlyTrain):
@@ -43,24 +44,39 @@ class Anomaly(EarlyTrain):
             print('| Epoch [%3d/%3d] Iter[%3d/%3d]\t\tLoss: %.4f' % (
                 epoch, self.epochs, batch_idx + 1, (self.n_pretrain_size // batch_size) + 1, loss.item()))
 
+    from torchvision import transforms
+
     def construct_matrix(self, index=None):
-        self.model.eval()
-        self.model.no_grad = True
+        # Load the ViT model and processor
+        vit_model = AutoModel.from_pretrained("google/vit-base-patch16-224", ignore_mismatched_sizes=True).to(
+            self.args.device)
+        processor = AutoProcessor.from_pretrained("google/vit-base-patch16-224", use_fast=True)
+
+        # Define transforms
+        denormalize_transform = transforms.Compose([
+            transforms.Normalize(mean=[-m / s for m, s in zip([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])],
+                                 std=[1 / s for s in [0.5, 0.5, 0.5]]),  # Reverse normalization
+            transforms.Resize((224, 224))
+        ])
+
+        vit_model.eval()
         with torch.no_grad():
-            with self.model.embedding_recorder:
-                sample_num = self.n_train if index is None else len(index)
-                matrix = torch.zeros([sample_num, self.emb_dim], requires_grad=False).to(self.args.device)
+            sample_num = self.n_train if index is None else len(index)
+            matrix = torch.zeros([sample_num, vit_model.config.hidden_size], requires_grad=False).to(self.args.device)
 
-                data_loader = torch.utils.data.DataLoader(self.dst_train if index is None else
-                                            torch.utils.data.Subset(self.dst_train, index),
-                                            batch_size=self.args.selection_batch,
-                                            num_workers=self.args.workers)
+            data_loader = torch.utils.data.DataLoader(
+                self.dst_train if index is None else torch.utils.data.Subset(self.dst_train, index),
+                batch_size=self.args.selection_batch,
+                num_workers=self.args.workers
+            )
 
-                for i, (inputs, _) in enumerate(data_loader):
-                    self.model(inputs.to(self.args.device))
-                    matrix[i * self.args.selection_batch:min((i + 1) * self.args.selection_batch, sample_num)] = self.model.embedding_recorder.embedding
+            for i, (inputs, _) in enumerate(data_loader):
+                # Denormalize and preprocess inputs for ViT
+                inputs = torch.stack([denormalize_transform(img) for img in inputs])
+                inputs = processor(images=inputs, return_tensors="pt").pixel_values.to(self.args.device)
+                outputs = vit_model(inputs).last_hidden_state.mean(dim=1)  # Use mean pooling
+                matrix[i * self.args.selection_batch:min((i + 1) * self.args.selection_batch, sample_num)] = outputs
 
-        self.model.no_grad = False
         return matrix
 
     def before_run(self):
