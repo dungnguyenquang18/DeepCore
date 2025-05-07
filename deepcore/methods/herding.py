@@ -4,8 +4,8 @@ import numpy as np
 from .methods_utils import euclidean_dist, cossim
 from ..nets.nets_utils import MyDataParallel
 from sklearn.ensemble import IsolationForest
-
-
+from transformers import AutoModel, AutoProcessor
+from torchvision import transforms
 
 class Herding(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200,
