@@ -72,7 +72,7 @@ class Ellipsoid(EarlyTrain):
 
 
     def coreset(self, matrix, budget: int, index=None):
-        return ellipsoid_cathedory_coreset(matrix, budget=budget)
+        return ellipsoid_cathedory_coreset(matrix, budget)
 
 
 
