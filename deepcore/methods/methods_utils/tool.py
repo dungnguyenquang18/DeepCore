@@ -168,53 +168,57 @@ def caratheodory_set(v, P):
     else:
         return None, None
 
-
-def l_infinity_coreset(P):
+def l_infinity_coreset(P, device=None):
     """
     Tính toán coreset cho bài toán MVEE trong không gian l-infinity.
     
     Args:
-        P (np.ndarray): Mảng shape (n_points, d), các điểm đầu vào.
+        P (torch.Tensor): Mảng shape (n_points, d), các điểm đầu vào.
+        device: Device để tính toán (CPU/GPU)
     
     Returns:
         np.ndarray: Mảng shape (m, d), coreset cho bài toán 
     """
-    P_ruduced = pca_reduce(P, 50)
-
-    P_prime, mapping = compute_P_prime(P_ruduced)
+    if device is None:
+        device = P.device
+        
+    # Giảm chiều dữ liệu
+    P_reduced = pca_reduce(P, 50)
+    
+    # Chuyển về CPU cho các phép tính numpy
+    P_cpu = P_reduced.cpu().numpy()
+    P_prime, mapping = compute_P_prime(P_cpu)
     S = []
 
+    # Tính MVEE trên CPU
     big_ellipsoid = compute_mvee(P_prime)
     small_ellipsoid = big_ellipsoid.shrink_ellipsoid(compute_rank(P_prime))
-    # Tính toán các đỉnh của ellipsoid nhỏ
     vertices = small_ellipsoid.vertices
     
-    
-    # Lấy các đỉnh của conv(P_prime)
-    hull = ConvexHull(P_prime)
-    P_hull = P_prime[hull.vertices]
-    
-
-    # Vẽ Carathéodory set cho từng đỉnh của ellipsoid nhỏ chỉ với conv(P_prime)
-    caratheodory_results = []
-    
-   
-    colors = ['red', 'green', 'orange', 'purple']
-    for i, v in enumerate(vertices):
-        idxs, lambdas = caratheodory_set(v, P_hull)
-        caratheodory_results.append((v, idxs, lambdas))
-        # Vẽ điểm v
-
-        if idxs is not None:
-            pts =P_hull[idxs]
- 
-            # Nối các điểm Carathéodory với v
-            for id in idxs:
-                S.append(id)
-            S = list(set(S))    
-
+    # Tính ConvexHull trên CPU
+    try:
+        hull = ConvexHull(P_prime)
+        P_hull = P_prime[hull.vertices]
         
-    return np.array(S)
+        # Xử lý Carathéodory sets
+        for i, v in enumerate(vertices):
+            idxs, lambdas = caratheodory_set(v, P_hull)
+            if idxs is not None:
+                # Chuyển indices về tập gốc thông qua hull.vertices
+                original_indices = hull.vertices[idxs]
+                S.extend(original_indices)
+        
+        S = list(set(S))
+        
+    except Exception as e:
+        print(f"Warning: ConvexHull computation failed: {e}")
+        # Fallback: sử dụng tất cả các điểm nếu ConvexHull fails
+        S = list(range(len(P_prime)))
+    
+    # Chuyển kết quả về tensor trên device chỉ định
+    S_tensor = torch.tensor(S, device=device)
+    
+    return S_tensor
 
 
 def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int) -> tuple[torch.Tensor, torch.Tensor]:
