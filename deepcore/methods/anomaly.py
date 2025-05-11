@@ -108,8 +108,6 @@ class Anomaly(EarlyTrain):
                
                 
             select_result = np.zeros(sample_num, dtype=bool)
-
-
             for i in range(budget):
                 if i % self.args.print_freq == 0:
                     print("| Selecting [%3d/%3d]" % (i + 1, budget))
