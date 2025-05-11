@@ -6,18 +6,23 @@ import numpy as np
 from numpy.linalg import eig, inv
 from scipy.spatial import ConvexHull
 
-def compute_rank(matrix):
+def compute_rank(matrix, device=None):
     """
     Compute the rank of a matrix.
 
     Parameters:
-    matrix (numpy array): Input matrix
+    matrix (torch.Tensor or numpy array): Input matrix
+    device: Device to perform computation on
 
     Returns:
     int: Rank of the matrix
     """
-    # Replace this with your actual compute_rank function
-    return np.linalg.matrix_rank(matrix)
+    if isinstance(matrix, torch.Tensor):
+        matrix_cpu = matrix.cpu().numpy()
+    else:
+        matrix_cpu = matrix
+    
+    return np.linalg.matrix_rank(matrix_cpu)
 
 
 
