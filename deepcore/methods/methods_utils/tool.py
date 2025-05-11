@@ -276,7 +276,7 @@ def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int) -> tuple[torch.Tensor, 
     
     # Tính điểm sensitive cho các điểm còn lại trong Q
     if Q.shape[0] > 0:
-        s[indices] = current_rank / i  # Gán dựa trên index gốc trong P
+        s[indices] = compute_rank(Q) / i  # Gán dựa trên index gốc trong P
     
     # Chuẩn hóa điểm sensitive
     if s.sum() != 0:
