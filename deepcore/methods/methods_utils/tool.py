@@ -188,7 +188,7 @@ def l_infinity_coreset(P, device=None):
         device = P.device
         
     # Giảm chiều dữ liệu
-    P_reduced = pca_reduce(P, 20)
+    P_reduced = pca_reduce(P, 10)
     
     # Chuyển về CPU cho các phép tính numpy
     P_cpu = P_reduced.cpu().numpy()
