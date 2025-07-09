@@ -226,7 +226,7 @@ def l_infinity_coreset(P, device=None, reduce_dim=50):
     return S_tensor
 
 
-def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int) -> tuple[torch.Tensor, torch.Tensor]:
+def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int,  reduce_dim=50) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Tính toán coreset cho bài toán MVEE trong không gian l-infinity.
     
@@ -253,7 +253,7 @@ def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int) -> tuple[torch.Tensor, 
     while l >= condition:
         print(f"loop {i}:")
         # Tìm coreset (S là tập index trong Q)
-        S = l_infinity_coreset(Q)
+        S = l_infinity_coreset(Q, device=P.device, reduce_dim=reduce_dim)
 
         
         # Tính điểm sensitive cho các điểm trong S
