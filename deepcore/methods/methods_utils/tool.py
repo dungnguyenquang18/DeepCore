@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from .ellipsoid import EllipsoidND
+from ellipsoid import EllipsoidND
 # import cvxpy as cp
 import numpy as np
 from numpy.linalg import eig, inv
@@ -226,7 +226,7 @@ def l_infinity_coreset(P, device=None, reduce_dim=50):
     return S_tensor
 
 
-def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int,  reduce_dim=50) -> tuple[torch.Tensor, torch.Tensor]:
+def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int,  reduce_dim=50) ->  torch.Tensor:
     """
     Tính toán coreset cho bài toán MVEE trong không gian l-infinity.
     
@@ -244,7 +244,7 @@ def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int,  reduce_dim=50) -> tupl
     Q = P.clone()
     s = torch.zeros(P.shape[0], dtype=torch.float32)
     indices = torch.arange(P.shape[0])  # Theo dõi index gốc trong P
-    
+    c = torch.tensor([], device=P.device)  # Chưa sử dụng, có thể bỏ qua nếu không cần thiết
     i = 1
     l = Q.shape[0]
     r = compute_rank(Q)
@@ -255,38 +255,39 @@ def ellipsoid_cathedory_coreset(P: torch.Tensor, m: int,  reduce_dim=50) -> tupl
         # Tìm coreset (S là tập index trong Q)
         S = l_infinity_coreset(Q, device=P.device, reduce_dim=reduce_dim)
 
-        
         # Tính điểm sensitive cho các điểm trong S
         current_rank = compute_rank(Q)
-        sensitive_score = current_rank / i
-        s[indices[S]] = sensitive_score  # Gán dựa trên index gốc trong P
-        
+
+        if indices[S].shape[0] > m - c.shape[0]:
+            c = torch.cat([c, indices[S][:m - c.shape[0]]])
+            # Trả về coreset và các điểm sensitive (ở đây chỉ trả về coreset)
+            return c.long()
+
         # Tạo mask để loại bỏ các điểm trong S
         mask = torch.ones(Q.size(0), dtype=torch.bool)
         mask[S] = False
-        
+
         # Cập nhật Q và indices
         Q = Q[mask]
         indices = indices[mask]
-        
+
         l = Q.shape[0]
         r = compute_rank(Q)
         condition = 2 * (r ** 2)
         i += 1
-    
+
     # Tính điểm sensitive cho các điểm còn lại trong Q
     if Q.shape[0] > 0:
-        s[indices] = compute_rank(Q) / i  # Gán dựa trên index gốc trong P
-    
-    # Chuẩn hóa điểm sensitive
-    if s.sum() != 0:
-        s = s / s.sum()
-    else:
-        s = torch.ones_like(s) / s.shape[0]  # Phân phối đều nếu tổng bằng 0
-    
-    # Chọn m điểm có điểm sensitive cao nhất
-    _, top_indices = torch.topk(s, min(m, P.shape[0]))
-    
-    return top_indices
-        
-    
+        c = torch.cat([c, indices[:m - c.shape[0]]])
+        return c.long()
+
+    return None
+
+
+if __name__ == "__main__":
+    # Example usage
+    P = torch.randn(100, 50)  # 100 points in 50 dimensions
+    m = 10  # Desired size of the coreset
+    sensitive_points = ellipsoid_cathedory_coreset(P, m)
+
+    print("Sensitive points shape:", sensitive_points)
