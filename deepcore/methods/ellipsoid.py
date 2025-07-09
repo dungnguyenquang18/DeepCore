@@ -71,8 +71,8 @@ class Ellipsoid(EarlyTrain):
 
 
 
-    def coreset(self, matrix, budget: int, index=None):
-        return ellipsoid_cathedory_coreset(matrix, budget)
+    def coreset(self, matrix, budget: int):
+        return ellipsoid_cathedory_coreset(matrix, budget, reduce_dim=self.args.reduce_dim)
 
 
 

@@ -173,7 +173,7 @@ def caratheodory_set(v, P):
     else:
         return None, None
 
-def l_infinity_coreset(P, device=None):
+def l_infinity_coreset(P, device=None, reduce_dim=50):
     """
     Tính toán coreset cho bài toán MVEE trong không gian l-infinity.
     
@@ -188,8 +188,8 @@ def l_infinity_coreset(P, device=None):
         device = P.device
         
     # Giảm chiều dữ liệu
-    P_reduced = pca_reduce(P, 50)
-    
+    P_reduced = pca_reduce(P, reduce_dim)
+
     # Chuyển về CPU cho các phép tính numpy
     P_cpu = P_reduced.cpu().numpy()
     P_prime, mapping = compute_P_prime(P_cpu)
