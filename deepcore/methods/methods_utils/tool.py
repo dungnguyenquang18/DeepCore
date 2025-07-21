@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from .ellipsoid import EllipsoidND
+from ellipsoid import EllipsoidND
 # import cvxpy as cp
 import numpy as np
 from numpy.linalg import eig, inv
