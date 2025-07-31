@@ -139,7 +139,7 @@ class GradMatch2(EarlyTrain):
                 for c in range(self.args.num_classes):
                     class_index = np.arange(self.n_train)[self.dst_train.targets == c]
                     cur_gradients = self.calc_gradient(class_index)
-                    if self.dsit_val is not None:
+                    if self.dst_val is not None:
                         # Also calculate gradients of the validation set.
                         val_class_index = np.arange(val_num)[self.dst_val.targets == c]
                         cur_val_gradients = torch.mean(self.calc_gradient(val_class_index, val=True), dim=0)
