@@ -118,7 +118,7 @@ class GradMatch2(EarlyTrain):
                     else:
                         cur_val_gradients = torch.mean(cur_gradients, dim=0)
                     
-                    selection_result = self.normalize_and_topk_coreset(cur_gradients.T,
+                    selection_result = self.normalize_and_topk_indices(cur_gradients.T,
                                                                         cur_val_gradients,
                                                                     budget=round(len(class_index) * self.fraction), device=self.args.device)
                     
@@ -130,7 +130,7 @@ class GradMatch2(EarlyTrain):
                     cur_val_gradients = torch.mean(self.calc_gradient(val=True), dim=0)
                 else:
                     cur_val_gradients = torch.mean(cur_gradients, dim=0)
-                selection_result = self.normalize_and_topk_coreset(cur_gradients.T,
+                selection_result = self.normalize_and_topk_indices(cur_gradients.T,
                                                                 cur_val_gradients,
                                                                 budget=round(self.n_train * self.fraction), device=self.args.device)
 
