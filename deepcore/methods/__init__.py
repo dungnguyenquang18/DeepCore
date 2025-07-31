@@ -16,3 +16,4 @@ from .uncertainty import *
 from .uniform import *
 from .anomaly import *
 from .ellipsoid import *
+from .gradmatch2 import *
