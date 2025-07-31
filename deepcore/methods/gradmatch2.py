@@ -10,7 +10,7 @@ from ..nets.nets_utils import MyDataParallel
 
 class GradMatch2(EarlyTrain):
     def __init__(self, dst_train, args, fraction=0.5, random_seed=None, epochs=200, specific_model=None,
-                 balance=True, dst_val=None, lam: float = 1., **kwargs):
+                 balance=False, dst_val=None, lam: float = 1., **kwargs):
         super().__init__(dst_train, args, fraction, random_seed, epochs, specific_model, **kwargs)
         self.balance = balance
         self.dst_val = dst_val
