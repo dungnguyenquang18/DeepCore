@@ -28,7 +28,35 @@ class GradMatch2(EarlyTrain):
 
 
 
+    def herding(self, matrix, mu, budget: int, index=None):
+        sample_num = matrix.shape[0]
 
+        if budget < 0:
+            raise ValueError("Illegal budget size.")
+        elif budget > sample_num:
+            budget = sample_num
+
+        indices = np.arange(sample_num)
+        with torch.no_grad(): 
+            select_result = np.zeros(sample_num, dtype=bool)
+            
+            for i in range(budget):
+                if i % self.args.print_freq == 0:
+                    print("| Selecting [%3d/%3d]" % (i + 1, budget))
+                    
+                dist = self.metric(((i + 1) * mu - torch.sum(matrix[select_result], dim=0)).view(1, -1),
+                                    matrix[~select_result])
+
+                p = torch.argmin(dist).item()
+                p = indices[~select_result][p]
+                select_result[p] = True
+                        
+                
+                
+                
+        if index is None:
+            index = indices
+        return index[select_result]
 
     def normalize_and_topk_indices(self, A: torch.Tensor, b: torch.Tensor, budget: int, device='cuda') -> torch.Tensor:
         """
@@ -111,7 +139,7 @@ class GradMatch2(EarlyTrain):
                 for c in range(self.args.num_classes):
                     class_index = np.arange(self.n_train)[self.dst_train.targets == c]
                     cur_gradients = self.calc_gradient(class_index)
-                    if self.dst_val is not None:
+                    if self.dsit_val is not None:
                         # Also calculate gradients of the validation set.
                         val_class_index = np.arange(val_num)[self.dst_val.targets == c]
                         cur_val_gradients = torch.mean(self.calc_gradient(val_class_index, val=True), dim=0)
